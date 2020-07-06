@@ -7,6 +7,7 @@ import Category from '../models/Category';
 
 import TransactionRepository from '../repositories/TransactionsRepository';
 import addCategoryIdToTransactions1590366403818 from '../database/migrations/1590366403818-addCategoryIdToTransactions';
+import TransactionsRepository from '../repositories/TransactionsRepository';
 
 interface TransactionCSV {
   title: string;
@@ -62,6 +63,21 @@ class ImportTransactionsService {
     );
 
     await categoryRepository.save(newCategories);
+
+    const finalCategories = [...newCategories, existingCategories];
+    const createdTransactions = transactionRepository.create(
+      transactions.map(transaction => ({
+        title: transaction.title,
+        type: transaction.type,
+        value: transaction.value,
+        category: finalCategories.find(
+          category => category.title === transaction.category,
+        ),
+      })),
+    );
+    await transactionRepository.save(createdTransactions);
+    await fs.promises.unlink(filePath);
+    return createdTransactions;
   }
 }
 
