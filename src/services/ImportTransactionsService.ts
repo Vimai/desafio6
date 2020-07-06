@@ -1,6 +1,12 @@
+import { getCustomRepository, getRepository, In, Column } from 'typeorm';
 import csvParse from 'csv-parse';
 import fs from 'fs';
+
 import Transaction from '../models/Transaction';
+import Category from '../models/Category';
+
+import TransactionRepository from '../repositories/TransactionsRepository';
+import addCategoryIdToTransactions1590366403818 from '../database/migrations/1590366403818-addCategoryIdToTransactions';
 
 interface TransactionCSV {
   title: string;
@@ -12,6 +18,8 @@ interface TransactionCSV {
 class ImportTransactionsService {
   async execute(filePath: string): Promise<Transaction[]> {
     const contactsReadStream = fs.createReadStream(filePath);
+    const transactionRepository = getCustomRepository(TransactionRepository);
+    const categoryRepository = getRepository(Category);
 
     const parsers = csvParse({
       from_line: 2,
@@ -34,6 +42,26 @@ class ImportTransactionsService {
       transactions.push({ title, type, value, category });
     });
     await new Promise(resolve => parceCSV.on('end', resolve));
+
+    const existingCategories = await categoryRepository.find({
+      where: {
+        title: In(categories),
+      },
+    });
+
+    const existingCategoriesTitles = existingCategories.map(
+      (category: Category) => category.title,
+    );
+
+    const categoriesTitlesToAdd = categories
+      .filter(category => !existingCategoriesTitles.includes(category))
+      .filter((value, index, self) => self.indexOf(value) === index);
+
+    const newCategories = categoryRepository.create(
+      categoriesTitlesToAdd.map(title => ({ title })),
+    );
+
+    await categoryRepository.save(newCategories);
   }
 }
 
