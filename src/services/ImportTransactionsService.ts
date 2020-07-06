@@ -1,4 +1,4 @@
-import { getCustomRepository, getRepository, In, Column } from 'typeorm';
+import { getCustomRepository, getRepository, In } from 'typeorm';
 import csvParse from 'csv-parse';
 import fs from 'fs';
 
@@ -6,8 +6,6 @@ import Transaction from '../models/Transaction';
 import Category from '../models/Category';
 
 import TransactionRepository from '../repositories/TransactionsRepository';
-import addCategoryIdToTransactions1590366403818 from '../database/migrations/1590366403818-addCategoryIdToTransactions';
-import TransactionsRepository from '../repositories/TransactionsRepository';
 
 interface TransactionCSV {
   title: string;
